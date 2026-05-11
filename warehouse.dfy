@@ -188,27 +188,28 @@ class Warehouse {
     added := false;
   }
 
-  method RemoveItem(target: Item) returns (removed: bool)
-    requires target.Valid()
+  method RemoveItem(itemId: nat) returns (removedItem: Item?)
     requires Valid()
     ensures DistinctCells()
     ensures Valid()
-    ensures forall i :: 0 <= i < |cells| ==> cells[i].item == null || cells[i].item.id != target.id
+    ensures removedItem != null ==> removedItem.id == itemId
+    ensures removedItem == null ==> forall i :: 0 <= i < |cells| ==> cells[i].item == null || cells[i].item.id != itemId
+    ensures forall i :: 0 <= i < |cells| ==> cells[i].item == null || cells[i].item.id != itemId
     modifies set i | 0 <= i < |cells| :: cells[i]
   {
-    removed := false;
+    removedItem := null;
     var i := 0;
     while i < |cells|
       invariant 0 <= i <= |cells|
       invariant forall j :: 0 <= j < |cells| ==> cells[j].Valid()
       invariant DistinctCells()
       invariant NoDuplicateIds()
-      invariant forall j :: 0 <= j < i ==> cells[j].item == null || cells[j].item.id != target.id
+      invariant removedItem != null ==> removedItem.Valid() && removedItem.id == itemId
+      invariant forall j :: 0 <= j < i ==> cells[j].item == null || cells[j].item.id != itemId
       modifies set k | 0 <= k < |cells| :: cells[k]
     {
-      if cells[i].item != null && cells[i].item.id == target.id {
-        var oldItem := cells[i].RemoveItem();
-        removed := true;
+      if cells[i].item != null && cells[i].item.id == itemId {
+        removedItem := cells[i].RemoveItem();
       }
       i := i + 1;
     }
@@ -256,9 +257,8 @@ method Main() {
   var index1 := warehouse.FindItemCell(101);
   print "Item 101 is in cell index: ", index1, "\n";
 
-  var removed1 := false;
-  removed1 := warehouse.RemoveItem(item1);
-  print "Remove item 101: ", removed1, "\n";
+  var removed1 := warehouse.RemoveItem(item1.id);
+  print "Remove item 101: ", removed1 != null, "\n";
 
 
   var indexAfterRemoval := warehouse.FindItemCell(101);
