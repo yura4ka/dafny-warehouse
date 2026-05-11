@@ -126,9 +126,7 @@ class Warehouse {
   constructor(cells: seq<Cell>)
     requires |cells| > 0
     requires forall i, j :: 0 <= i < j < |cells| ==> cells[i].id != cells[j].id
-    requires forall i :: 0 <= i < |cells| ==> cells[i].Valid()
-    requires forall i, j :: 0 <= i < j < |cells| ==>
-                              cells[i].item != null && cells[j].item != null ==> cells[i].item.id != cells[j].item.id
+    requires forall i :: 0 <= i < |cells| ==> cells[i].Valid() && cells[i].item == null
     ensures Valid()
     ensures this.cells == cells
   {
@@ -167,6 +165,7 @@ class Warehouse {
     requires forall i :: 0 <= i < |cells| ==> cells[i].item == null || cells[i].item.id != newItem.id
     requires Valid()
     ensures Valid()
+    ensures forall i :: 0 <= i < |cells| ==> cells[i].item == old(cells[i].item) || cells[i].item == newItem
     ensures added ==> exists i :: 0 <= i < |cells| && cells[i].item == newItem
     ensures !added ==> forall i :: 0 <= i < |cells| ==> !cells[i].CellCanAccept(newItem)
     modifies set i | 0 <= i < |cells| :: cells[i]
@@ -247,11 +246,12 @@ method Main() {
   var before := warehouse.FindItemCell(item1.id);
   print "Item 101 before add: ", before, "\n";
 
-  var added1 := false;
-  if before == -1 {
-    added1 := warehouse.AddItem(item1);
-  }
+  var added1 := warehouse.AddItem(item1);
   print "Add item 101: ", added1, "\n";
+
+  var item2 := new Item(102, 100, 100, {Cold});
+  var added2 := warehouse.AddItem(item2);
+  print "Add item 102: ", added2, "\n";
 
   var index1 := warehouse.FindItemCell(101);
   print "Item 101 is in cell index: ", index1, "\n";
